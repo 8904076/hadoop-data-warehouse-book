@@ -34,7 +34,13 @@ create table sales_order (
 -- 生成客户表测试数据
 insert into customer (customer_name,customer_street_address,customer_zip_code,customer_city,customer_state)
 values
-('really large customers', '7500 louise dr.', 17050, 'mechanicsburg',' pa'), ('small stores', '2500 woodland st.', 17055, 'pittsburgh',' pa'), ('medium retailers',' 1111 ritter rd.', 17055,' pittsburgh',' pa'), ('good companies',' 9500 scott st.', 17050,' mechanicsburg',' pa'), ('wonderful shops',' 3333 rossmoyne rd.', 17050,' mechanicsburg',' pa'), ('loyal clients',' 7070 ritter rd.', 17055,' pittsburgh',' pa'), ('distinguished partners',' 9999 scott st.', 17050,' mechanicsburg',' pa');
+('really large customers', '7500 louise dr.', 17050, 'mechanicsburg','pa'),
+('small stores', '2500 woodland st.', 17055, 'pittsburgh','pa'),
+('medium retailers','1111 ritter rd.', 17055,'pittsburgh','pa'),
+('good companies','9500 scott st.', 17050,'mechanicsburg','pa'),
+('wonderful shops','3333 rossmoyne rd.', 17050,'mechanicsburg','pa'),
+('loyal clients','7070 ritter rd.', 17055,'pittsburgh','pa'),
+('distinguished partners','9999 scott st.', 17050,'mechanicsburg','pa');
 -- 生成产品表测试数据
 insert into product (product_name, product_category) 
 values 
@@ -69,4 +75,3 @@ end
 delimiter ;
 
 call generate_sales_order_data();
-

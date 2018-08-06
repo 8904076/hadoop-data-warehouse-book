@@ -97,3 +97,27 @@ location '/a';
 **注意**：
 - 1. OVERWRITE不会删除已有的分区目录，只会追加新分区，并覆盖已有分区的非分区数据
 - 2. 不能使用LOAD进行动态分区插入
+
+# 第8章
+### 在命令行中执行HiveQL语句
+```
+beeline -u jdbc:hive2://node5.bupt.edu.cn:10000/test -e "select * from t"
+```
+
+### 执行HiveQL文件
+```
+beeline -u jdbc:hive2://node5.bupt.edu.cn:10000/dw -f create_table_date_dim.hql
+```
+
+### 操作HDFS
+```
+dfs -ls /;
+dfs -help;
+```
+
+### 查看函数帮助信息
+```
+show functions;
+desc function abs;
+desc function extended abs;
+```
