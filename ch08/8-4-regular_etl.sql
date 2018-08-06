@@ -121,4 +121,94 @@ select
     row_number() over (order by t1.product_code) + t2.sk_max,
     t1.product_code,
     t1.product_name,
-    
+    t1.product_category,
+    t1.version,
+    t1.effective_date,
+    t1.expiry_date
+  from
+(
+select
+    t2.product_code product_code,
+    t2.product_name product_name,
+    t2.product_category product_category,
+    t1.version + 1 version,
+    ${hivevar:pre_date} effective_date,
+    ${hivevar:max_date} expiry_date
+  from product_dim t1
+ inner join rds.product t2
+    on t1.product_code = t2.product_code
+   and t1.expiry_date = ${hivevar:pre_date}
+  left join product_dim t3
+    on t1.product_code = t3.product_code
+   and t3.expiry_date = ${hivevar:max_date}
+ where (t1.product_name <> t2.product_name or t1.product_category <> t2.product_category) and
+t3.product_sk is null) t1
+cross join
+(select coalesce(max(product_sk),0) sk_max from product_dim) t2;
+
+-- 处理新增的 product 记录
+insert into product_dim
+select
+    row_number() over (order by t1.product_code) + t2.sk_max,
+    t1.product_code,
+    t1.product_name,
+    t1.product_category,
+    1,
+    ${hivevar:pre_date},
+    ${hivevar:max_date}
+  from
+(
+select t1.* from rds.product t1 left join product_dim t2 on t1.product_code = t2.product_code
+ where t2.product_sk is null) t1
+ cross join
+(select coalesce(max(product_sk),0) sk_max from product_dim) t2;
+
+-- 5、装载订单维度表
+insert into order_dim
+select
+    row_number() over (order by t1.order_number) + t2.sk_max,
+    t1.order_number,
+    t1.version,
+    t1.effective_date,
+    t1.expiry_date
+  from
+(
+select
+    order_number order_number,
+    1 version,
+    order_date effective_date,
+    '2200-01-01' expiry_date
+  from rds.sales_order, rds.cdc_time
+ where entry_date >= last_load and entry_date < current_load ) t1
+ cross join
+(select coalesce(max(order_sk),0) sk_max from order_dim) t2;
+
+-- 6、装载销售订单事实表
+insert into sales_order_fact
+select
+    order_sk,
+    customer_sk,
+    product_sk,
+    date_sk,
+    order_amount
+  from
+    rds.sales_order a,
+    order_dim b,
+    customer_dim c,
+    product_dim d,
+    date_dim e,
+    rds.cdc_time f
+ where
+    a.order_number = b.order_number
+and a.customer_number = c.customer_number
+and a.order_date >= c.effective_date
+and a.order_date < c.expiry_date
+and a.product_code = d.product_code
+and a.order_Date >= d.effective_date
+and a.order_date < d.expiry_date
+and to_date(a.order_date) = e.day
+and a.entry_date >= f.last_load and a.entry_date < f.current_load ;
+
+-- 7、更新数据处理时间窗口
+-- 更新时间戳表的 last_load 字段
+insert overwrite table rds.cdc_time select current_load, current_load from rds.cdc_time;
